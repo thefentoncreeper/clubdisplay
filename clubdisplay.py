@@ -13,7 +13,7 @@ import time
 import argparse
 import logging
 import logging.handlers
-from gpiozero import LED, RGBLED
+from gpiozero import LED, RGBLED, Button
 
 #
 # parsing
@@ -22,14 +22,20 @@ parser = argparse.ArgumentParser(description="Club Display Demo")
 parser.add_argument("-t",
                     "--test",
                     action="store_true",
-                    help="for offline testing")
+                    help="no outputs for offline testing")
 parser.add_argument(
     "-d",
     "--delay",
     default=0,
     type=int,
-    help="delay time in mills",
-)
+    help="delay time in mills")
+
+parser.add_argument(
+    "-v",
+    "--verbose",
+    action="store_true",
+    help="more verbose logging")
+
 args = parser.parse_args()
 
 delay = int(args.delay)
@@ -50,9 +56,6 @@ fh = logging.handlers.RotatingFileHandler(LOG_FILENAME,
 if args.test:
     logger.setLevel(logging.DEBUG)
     fh.setLevel(logging.DEBUG)
-else:
-    logger.setLevel(logging.INFO)
-    fh.setLevel(logging.INFO)
 
 # create formatter and add it to the handlers
 formatter = logging.Formatter(fmt="%(asctime)s %(levelname)s %(message)s",
@@ -64,11 +67,23 @@ logger.addHandler(fh)
 
 
 #
+# verbose
+#
+if args.verbose:
+    logger.setLevel(logging.DEBUG)
+    fh.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
+    fh.setLevel(logging.INFO)
+
+
+#
 # variables
 #
 if not args.test:
     signal = LED(4)
     rgb = RGBLED(red=17, green=27, blue=22)
+    sbutton = Button (2)
 
 
 #
@@ -79,6 +94,10 @@ def startstoppulse():
         signal.on()
         time.sleep(0.5)
         signal.off()
+    return
+
+def startfunction ():
+    logger.info ("Start button pressed")
     return
 
 
@@ -95,12 +114,16 @@ def main():
     logger.info("nowtime = " + str(timestamp)[:5])
     startstoppulse()
     stage = 0
+    oldstage = -1
     r = 0
     g = 0
     b = 0
 
     while True:
         try:
+            if sbutton.is_pressed:
+                startfuncion ()
+
             if stage == 0:
                 # blue to violet
                 r = r + 1
@@ -125,20 +148,23 @@ def main():
                 # green to teal
                 r = r - 1
                 if r == 0:
-                    stage = stage +1
+                    stage = stage + 1
             elif stage == 5:
                 # teal to blue
                 b = b - 1
                 if b == 0:
                     stage = 0
 
-            rgb.color = (r/255, g/255, b/255)
-            print("r ="+str(r)[:3]+", g="+str(g)[:3]+", b="+str(b)[:3])
-            time.sleep(delay / 1000) # wait delay-time
-
+            if stage != oldstage:
+                    logger.debug("stage = " + str(stage))
+                    logger.debug("nowtime = " + str(timestamp)[:5])
+                    oldstage = stage
+ 
             timestamp = dt.datetime.now().time()
-            if args.test:
-                logger.info("nowtime = " + str(timestamp)[:5])
+            rgb.color = (r/255, g/255, b/255)
+            # logger.debug("r ="+str(r)[:3]+", g="+str(g)[:3]+", b="+str(b)[:3])
+
+            time.sleep(delay / 1000)        # wait delay-time
 
         except KeyboardInterrupt:
             print("\n\nKeyboard exception.  Exiting.\n")
@@ -147,9 +173,10 @@ def main():
             exit()
 
         except Exception:
-            logger.info("program end: " + str(sys.exc_info()[0]))
+            logger.error("program end: " + str(sys.exc_info()[0]))
             startstoppulse()
             exit()
+
     startstoppulse()
     return
 
