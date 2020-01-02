@@ -90,13 +90,14 @@ if not args.test:
 #
 # defined functions
 #
-def startstoppulse():
-    if not args.test:
-        signal.on()
-        time.sleep(0.5)
-        signal.off()
+def checktime():
+    pass
+    # signal.on()
+    return True
+
 
 def startfunction():
+    signal.off()
     logger.info("Start button pressed")
 
 
@@ -111,17 +112,21 @@ def startfunction():
 def main():
     timestamp = dt.datetime.now().time()
     logger.info("nowtime = " + str(timestamp)[:5])
-    startstoppulse()
+    signal.on()
     stage = 0
     oldstage = -1
     r = 0
     g = 0
     b = 255
+    keeprunning = True
 
-    while True:
+    while keeprunning:
         try:
             if button.is_pressed:
                 startfunction()
+            else:
+                signal.on()
+            keeprunning = checktime()
 
             if stage == 0:
                 # blue to violet
@@ -168,15 +173,15 @@ def main():
         except KeyboardInterrupt:
             print("\n\nKeyboard exception.  Exiting.\n")
             logger.info("keyboard exception")
-            startstoppulse()
+            signal.off()
             exit()
 
         except Exception:
             logger.error("program end: " + str(sys.exc_info()[0]))
-            startstoppulse()
+            signal.off()
             exit()
 
-    startstoppulse()
+    signal.off()
     return
 
 if __name__ == "__main__":
