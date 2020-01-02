@@ -10,6 +10,7 @@
 #
 import datetime as dt
 import time
+import sys
 import argparse
 import logging
 import logging.handlers
@@ -83,7 +84,7 @@ else:
 if not args.test:
     signal = LED(4)
     rgb = RGBLED(red=17, green=27, blue=22)
-    sbutton = Button (2)
+    button = Button(2)
 
 
 #
@@ -94,11 +95,9 @@ def startstoppulse():
         signal.on()
         time.sleep(0.5)
         signal.off()
-    return
 
-def startfunction ():
-    logger.info ("Start button pressed")
-    return
+def startfunction():
+    logger.info("Start button pressed")
 
 
 #
@@ -117,12 +116,12 @@ def main():
     oldstage = -1
     r = 0
     g = 0
-    b = 0
+    b = 255
 
     while True:
         try:
-            if sbutton.is_pressed:
-                startfuncion ()
+            if button.is_pressed:
+                startfunction()
 
             if stage == 0:
                 # blue to violet
@@ -131,35 +130,35 @@ def main():
                     stage = stage + 1
             elif stage == 1:
                 # violet to red
-                g = g + 1
-                if g == 255:
+                b = b - 1
+                if b == 0:
                     stage = stage + 1
             elif stage == 2:
                 # red to yellow
-                b = b + 1
-                if b == 255:
+                g = g + 1
+                if g == 255:
                     stage = stage + 1
             elif stage == 3:
                 # yellow to green
-                g = g - 1
-                if g == 0:
-                    stage = stage + 1
-            elif stage == 4:
-                # green to teal
                 r = r - 1
                 if r == 0:
                     stage = stage + 1
+            elif stage == 4:
+                # green to teal
+                b = b + 1
+                if b == 255:
+                    stage = stage + 1
             elif stage == 5:
                 # teal to blue
-                b = b - 1
-                if b == 0:
+                g = g - 1
+                if g == 0:
                     stage = 0
 
             if stage != oldstage:
                     logger.debug("stage = " + str(stage))
                     logger.debug("nowtime = " + str(timestamp)[:5])
                     oldstage = stage
- 
+
             timestamp = dt.datetime.now().time()
             rgb.color = (r/255, g/255, b/255)
             # logger.debug("r ="+str(r)[:3]+", g="+str(g)[:3]+", b="+str(b)[:3])
