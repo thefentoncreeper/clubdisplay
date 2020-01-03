@@ -8,7 +8,7 @@
 #
 # imports
 #
-import datetime as dt
+from datetime import datetime, timedelta
 import time
 import sys
 import argparse
@@ -90,28 +90,27 @@ if not args.test:
 #
 # defined functions
 #
-def checktime():
-    pass
-    # signal.on()
-    return True
-
-
-def startfunction():
+def startfunction(stimestamp):
     signal.off()
     logger.info("Start button pressed")
+    logger.info("nowtime = " + format(stimestamp, '%H:%M:%S'))
+    sendtime = stimestamp + timedelta(minutes=1)
+    time.sleep(0.2)
+    signal.on()
+    return sendtime
 
-
-#
-# first run items
-#
 
 #
 # main loop
 #
 
 def main():
-    timestamp = dt.datetime.now().time()
-    logger.info("nowtime = " + str(timestamp)[:5])
+#
+# first run items
+#
+    timestamp = datetime.now()
+    endtime = timestamp
+    logger.info("nowtime = " + format(timestamp, '%H:%M:%S'))
     signal.on()
     stage = 0
     oldstage = -1
@@ -122,11 +121,12 @@ def main():
 
     while keeprunning:
         try:
+            timestamp = datetime.now()
             if button.is_pressed:
-                startfunction()
+                endtime = startfunction(timestamp)
             else:
-                signal.on()
-            keeprunning = checktime()
+                if timestamp > endtime:
+                    signal.off()
 
             if stage == 0:
                 # blue to violet
@@ -161,10 +161,9 @@ def main():
 
             if stage != oldstage:
                     logger.debug("stage = " + str(stage))
-                    logger.debug("nowtime = " + str(timestamp)[:5])
+                    logger.debug("nowtime = " + format(timestamp, '%H:%M:%S'))
                     oldstage = stage
 
-            timestamp = dt.datetime.now().time()
             rgb.color = (r/255, g/255, b/255)
             # logger.debug("r ="+str(r)[:3]+", g="+str(g)[:3]+", b="+str(b)[:3])
 
@@ -172,11 +171,13 @@ def main():
 
         except KeyboardInterrupt:
             print("\n\nKeyboard exception.  Exiting.\n")
+            logger.info("nowtime = " + format(timestamp, '%H:%M:%S'))
             logger.info("keyboard exception")
             signal.off()
             exit()
 
         except Exception:
+            logger.debug("nowtime = " + format(timestamp, '%H:%M:%S'))
             logger.error("program end: " + str(sys.exc_info()[0]))
             signal.off()
             exit()
