@@ -3,7 +3,7 @@
 
 # updates
 # 2019-12-31 init
-
+# 2020-01-03 set to run
 
 #
 # imports
@@ -84,6 +84,7 @@ else:
 if not args.test:
     signal = LED(4)
     rgb = RGBLED(red=17, green=27, blue=22)
+    rgbpower = LED(5)
     button = Button(2)
 
 
@@ -91,11 +92,13 @@ if not args.test:
 # defined functions
 #
 def startfunction(stimestamp):
+    rgbpower.off()
     signal.off()
     logger.info("Start button pressed")
     logger.info("nowtime = " + format(stimestamp, '%H:%M:%S'))
-    sendtime = stimestamp + timedelta(minutes=1)
+    sendtime = stimestamp + timedelta(hours=8)
     time.sleep(0.2)
+    rgbpower.on()
     signal.on()
     return sendtime
 
@@ -111,6 +114,7 @@ def main():
     timestamp = datetime.now()
     endtime = timestamp
     logger.info("nowtime = " + format(timestamp, '%H:%M:%S'))
+    rgbpower.on()
     signal.on()
     stage = 0
     oldstage = -1
@@ -126,6 +130,7 @@ def main():
                 endtime = startfunction(timestamp)
             else:
                 if timestamp > endtime:
+                    rgbpower.off()
                     signal.off()
 
             if stage == 0:
@@ -173,15 +178,18 @@ def main():
             print("\n\nKeyboard exception.  Exiting.\n")
             logger.info("nowtime = " + format(timestamp, '%H:%M:%S'))
             logger.info("keyboard exception")
+            rgbpower.off()
             signal.off()
             exit()
 
         except Exception:
             logger.debug("nowtime = " + format(timestamp, '%H:%M:%S'))
             logger.error("program end: " + str(sys.exc_info()[0]))
+            rgbpower.off()
             signal.off()
             exit()
 
+    rgbpower.off()
     signal.off()
     return
 
